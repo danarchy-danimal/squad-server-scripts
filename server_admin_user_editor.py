@@ -23,9 +23,18 @@ class User:
         self.group = group
 
 
-    # The str method prints the object in the expected entry format
+    # The str method prints the object in human readable format
     def __str__(self):
+        return '{}:{}'.format(self.name,self.permission)
+
+
+    def csv_line(self):
+        return '{},{},{},{}'.format(self.name,self.group,self.permission,self.steamid)
+
+
+    def whitelist_line(self):
         return 'Admin={}:{} // {}'.format(self.steamid,self.permission,self.name)
+
 
 
 # This is surpurfluous, right now, don't code at 2 am. Keeping it in for handling user
@@ -48,8 +57,6 @@ def parse_entry(line,group):
     return user
 
 
-
-
 def readlist(admins_file):
     with open(admins_file) as fin:
         for x in range(1,8):
@@ -61,7 +68,8 @@ def readlist(admins_file):
             if not line:
                 continue
             if "===" in line:
-                group=fin.readline().lstrip().rstrip()
+                group=fin.readline()
+                group=group.lstrip().rstrip()
                 continue
             elif line.isspace():
                 continue
@@ -77,47 +85,40 @@ def readlist(admins_file):
         return uniq_users
 
 
-def print_list(users):
+def print_list(users, option=''):
     users.sort(key=lambda x:x.name.lower())
     users.sort(key=lambda x:x.group)
 
     groups = sorted(set(g.group for g in users))
     groups.remove('Super Admins')
     groups.insert(0,'Super Admins')
- 
-    print(header)   
+    
+    if option == 'whitelist':
+        print(header)   
     for g in groups:
-        print('\n'+'='*79)
-        print(g+'\n')
+        if not option == 'csv':
+            print('\n'+'='*79)
+            print(g+'\n')
+        else:
+            print('')
         for x in [y for y in users if y.group == g]:
             try:
-                print(x)
+                if option == 'whitelist':
+                    print(x.whitelist_line())
+                elif option == 'csv':
+                    print(x.csv_line())
+                else:
+                    print(x)
             except:
                 print('How the fuck did this break')
 
-
-def print_list_readable(users):
-    users.sort(key=lambda x:x.name.lower())
-    users.sort(key=lambda x:x.group)
-
-    groups = sorted(set(g.group for g in users))
-    groups.remove('Super Admins')
-    groups.insert(0,'Super Admins')
- 
-    print(header)   
-    for g in groups:
-        print('\n'+'='*79)
-        print(g+'\n')
-        for x in [y for y in users if y.group == g]:
-            try:
-                print('{}: {}'.format(x.name, x .permission))
-            except:
-                print('How the fuck did this break')
 
 def main():
     users = readlist(sys.argv[1])
-    print_list(users)
-    #print_list_readable(users)
+    if len(sys.argv) > 2:
+        print_list(users,sys.argv[2])
+    else:
+        print_list(users)
 
 
 if __name__ == '__main__':
